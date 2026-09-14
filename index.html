@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFTC COT Report Viewer</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #f4f6f9;
+  color: #1e272e;
+  margin: 0;
+  padding: 32px 16px;
+}
+.container { max-width: 1100px; margin: 0 auto; }
+h1 { font-size: 28px; margin-bottom: 4px; }
+.subtitle { color: #57606f; margin-top: 0; margin-bottom: 24px; }
+
+.controls {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: #57606f; }
+.field input, .field select {
+  padding: 8px 10px; border: 1px solid #dfe4ea; border-radius: 8px; font-size: 14px; min-width: 180px;
+}
+.field.grow { flex: 1; min-width: 220px; }
+button {
+  background: #2f3542; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 18px; font-size: 14px; cursor: pointer; font-weight: 600;
+}
+button:hover { background: #1e272e; }
+button:disabled { background: #b2bec3; cursor: not-allowed; }
+
+#status { font-size: 14px; color: #57606f; margin-bottom: 16px; min-height: 20px; }
+#status.error { color: #eb3b5a; }
+
+.overview-card, .cat-card {
+  background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 6px solid #dfe4ea;
+}
+.cat-card.important {
+  border-left-width: 8px; border-left-color: #f0932b;
+  background: linear-gradient(135deg, #fff8ec 0%, #ffffff 55%);
+  box-shadow: 0 2px 10px rgba(240, 147, 43, 0.25);
+}
+.cat-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cat-header h2 { margin: 0; font-size: 19px; }
+.star { color: #f0932b; font-size: 13px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+.cat-summary { font-size: 14px; color: #2f3542; }
+.trend-line { color: #57606f; font-size: 14px; margin: 6px 0 16px 0; }
+
+table.cot-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.cot-table th {
+  text-align: left; padding: 8px 10px; background: #f1f2f6; border-bottom: 2px solid #dfe4ea;
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; color: #57606f;
+}
+table.cot-table td { padding: 8px 10px; border-bottom: 1px solid #eef0f3; }
+table.cot-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pos { color: #20bf6b; } .neg { color: #eb3b5a; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; }
+.badge-long { background: #d1f7e0; color: #0a8a4a; }
+.badge-short { background: #fddcdf; color: #c0392b; }
+.badge-flat { background: #eee; color: #636e72; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+tr.overview-important { background: #fff8ec; font-weight: 600; }
+tr.overview-total { background: #f1f2f6; border-top: 2px solid #dfe4ea; }
+.footer-note { color: #a4b0be; font-size: 12.5px; margin-top: 24px; }
+#report { display: none; }
+
+.side-by-side { display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch; }
+.side-by-side > .cat-card, .side-by-side > .sentiment-card { flex: 1 1 380px; margin-bottom: 24px; }
+
+.sentiment-card {
+  background: #fff; border-radius: 12px; padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 6px solid #eb3b5a;
+}
+.sentiment-notice {
+  background: #fff8ec; border: 1px solid #f0c987; color: #8a5a00;
+  border-radius: 8px; padding: 8px 12px; font-size: 12px; margin-bottom: 14px;
+}
+.sentiment-source { color: #a4b0be; font-size: 12px; margin: 0 0 16px 0; }
+.sentiment-bar-labels { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.sentiment-bar { height: 14px; border-radius: 7px; overflow: hidden; display: flex; background: #eee; margin-bottom: 18px; }
+.sentiment-bar .long-fill { background: #20bf6b; }
+.sentiment-bar .short-fill { background: #eb3b5a; }
+table.broker-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.broker-table th {
+  text-align: left; padding: 6px 8px; background: #f1f2f6; border-bottom: 2px solid #dfe4ea;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: #57606f;
+}
+table.broker-table td { padding: 6px 8px; border-bottom: 1px solid #eef0f3; }
+table.broker-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { padding: 2px 9px; border-radius: 14px; font-size: 11px; font-weight: 700; }
+.pill-bear { background: #fddcdf; color: #c0392b; }
+.pill-bull { background: #d1f7e0; color: #0a8a4a; }
+.pill-neutral { background: #eee; color: #636e72; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CFTC Disaggregated COT Report</h1>
+  <p class="subtitle">Live data pulled client-side from the CFTC Public Reporting API (Futures Only, dataset 72hh-3qpy).</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="commodity">Commodity</label>
+      <input id="commodity" type="text" value="GOLD" placeholder="e.g. GOLD, SILVER">
+    </div>
+    <div class="field grow">
+      <label for="market">Market (optional, exact match)</label>
+      <select id="market"><option value="">-- auto-pick main contract --</option></select>
+    </div>
+    <div class="field">
+      <label for="weeks">Weeks to show</label>
+      <input id="weeks" type="number" value="5" min="2" max="52">
+    </div>
+    <button id="loadBtn">Load Report</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="report"></div>
+</div>
+
+<script>
+const API_URL = "https://publicreporting.cftc.gov/resource/72hh-3qpy.json";
+
+const CATEGORIES = [
+  { name: "Producer/Merchant", long: "prod_merc_positions_long", short: "prod_merc_positions_short",
+    chgLong: "change_in_prod_merc_long", chgShort: "change_in_prod_merc_short", color: "#4b7bec", important: false },
+  { name: "Swap Dealers", long: "swap_positions_long_all", short: "swap__positions_short_all",
+    chgLong: "change_in_swap_long_all", chgShort: "change_in_swap_short_all", color: "#f0932b", important: true },
+  { name: "Managed Money", long: "m_money_positions_long_all", short: "m_money_positions_short_all",
+    chgLong: "change_in_m_money_long_all", chgShort: "change_in_m_money_short_all", color: "#20bf6b", important: false },
+  { name: "Other Reportables", long: "other_rept_positions_long", short: "other_rept_positions_short",
+    chgLong: "change_in_other_rept_long", chgShort: "change_in_other_rept_short", color: "#8854d0", important: false }
+];
+const NONREPT = { long: "nonrept_positions_long_all", short: "nonrept_positions_short_all" };
+
+const num = (v) => parseInt(v, 10) || 0;
+const fmt = (n) => n.toLocaleString("en-US");
+const badge = (net) => net > 0
+  ? '<span class="badge badge-long">LONG</span>'
+  : net < 0 ? '<span class="badge badge-short">SHORT</span>'
+  : '<span class="badge badge-flat">FLAT</span>';
+
+async function socrataGet(where) {
+  const url = `${API_URL}?$where=${encodeURIComponent(where)}&$order=report_date_as_yyyy_mm_dd DESC&$limit=20000`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
+async function listMarkets(commodity) {
+  const where = `upper(commodity_name) = upper('${commodity.replace(/'/g, "''")}')`;
+  const rows = await socrataGet(where);
+  const names = [...new Set(rows.map(r => r.market_and_exchange_names))].sort();
+  const select = document.getElementById("market");
+  select.innerHTML = '<option value="">-- auto-pick main contract --</option>';
+  names.forEach(n => {
+    const opt = document.createElement("option");
+    opt.value = n; opt.textContent = n;
+    select.appendChild(opt);
+  });
+  return rows;
+}
+
+function pickMainMarket(rows) {
+  const counts = {};
+  rows.forEach(r => counts[r.market_and_exchange_names] = (counts[r.market_and_exchange_names] || 0) + 1);
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function categoryCard(cat, sorted) {
+  const rowsHtml = sorted.map((r, i) => {
+    const long = num(r[cat.long]), short = num(r[cat.short]);
+    const chgLong = num(r[cat.chgLong]), chgShort = num(r[cat.chgShort]);
+    const net = long - short;
+    const prevNet = i > 0 ? (num(sorted[i-1][cat.long]) - num(sorted[i-1][cat.short])) : null;
+    const netChg = prevNet === null ? null : net - prevNet;
+    return `<tr>
+      <td>${r.report_date_as_yyyy_mm_dd.slice(0,10)}</td>
+      <td class="num">${fmt(long)}</td>
+      <td class="num">${fmt(short)}</td>
+      <td class="num ${chgLong>=0?'pos':'neg'}">${fmt(chgLong)}</td>
+      <td class="num ${chgShort>=0?'pos':'neg'}">${fmt(chgShort)}</td>
+      <td class="num ${net>=0?'pos':'neg'}"><strong>${fmt(net)}</strong></td>
+      <td class="num ${netChg===null?'':(netChg>=0?'pos':'neg')}">${netChg===null?'&mdash;':fmt(netChg)}</td>
+    </tr>`;
+  }).join("");
+
+  const last = sorted[sorted.length - 1];
+  const lastNet = num(last[cat.long]) - num(last[cat.short]);
+  let trend = "";
+  if (sorted.length >= 2) {
+    const prev = sorted[sorted.length - 2];
+    const prevNet = num(prev[cat.long]) - num(prev[cat.short]);
+    const diff = lastNet - prevNet;
+    const direction = diff < 0 ? "widened short exposure" : diff > 0 ? "reduced short / added long exposure" : "held steady";
+    trend = `vs prior week, net position ${direction} by <strong>${fmt(Math.abs(diff))}</strong> contracts.`;
+  }
+
+  return `
+  <div class="cat-card ${cat.important ? 'important' : ''}" style="border-left-color:${cat.color};">
+    <div class="cat-header">
+      <h2>${cat.name}${cat.important ? ' <span class="star">&#9733; KEY GROUP</span>' : ''}</h2>
+      <div class="cat-summary">Latest net: <strong class="${lastNet>=0?'pos':'neg'}">${fmt(lastNet)}</strong> ${badge(lastNet)}</div>
+    </div>
+    <p class="trend-line">${trend}</p>
+    <table class="cot-table">
+      <thead><tr><th>Report Date</th><th>Long</th><th>Short</th><th>Chg Long (wk)</th><th>Chg Short (wk)</th><th>Net (L-S)</th><th>Net Chg (wk)</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  </div>`;
+}
+
+function overviewCard(sorted) {
+  const last = sorted[sorted.length - 1];
+  let totalLong = 0, totalShort = 0;
+  const rows = CATEGORIES.map(cat => {
+    const long = num(last[cat.long]), short = num(last[cat.short]);
+    totalLong += long; totalShort += short;
+    const net = long - short;
+    return `<tr class="${cat.important ? 'overview-important' : ''}">
+      <td><span class="dot" style="background:${cat.color};"></span>${cat.name}${cat.important ? ' <span class="star">&#9733;</span>' : ''}</td>
+      <td class="num">${fmt(long)}</td>
+      <td class="num">${fmt(short)}</td>
+      <td class="num ${net>=0?'pos':'neg'}"><strong>${fmt(net)}</strong></td>
+      <td>${badge(net)}</td>
+    </tr>`;
+  }).join("");
+
+  const nrLong = num(last[NONREPT.long]), nrShort = num(last[NONREPT.short]);
+  totalLong += nrLong; totalShort += nrShort;
+  const nrNet = nrLong - nrShort;
+  const nrRow = `<tr>
+    <td><span class="dot" style="background:#b2bec3;"></span>Non-Reportable (small traders)</td>
+    <td class="num">${fmt(nrLong)}</td><td class="num">${fmt(nrShort)}</td>
+    <td class="num ${nrNet>=0?'pos':'neg'}"><strong>${fmt(nrNet)}</strong></td><td>${badge(nrNet)}</td>
+  </tr>`;
+
+  const totalNet = totalLong - totalShort;
+  const totalRow = `<tr class="overview-total">
+    <td><strong>ALL (Total Market)</strong></td>
+    <td class="num"><strong>${fmt(totalLong)}</strong></td>
+    <td class="num"><strong>${fmt(totalShort)}</strong></td>
+    <td class="num ${totalNet>=0?'pos':'neg'}"><strong>${fmt(totalNet)}</strong></td>
+    <td>${badge(totalNet)}</td>
+  </tr>`;
+
+  return `
+  <div class="overview-card">
+    <h2>Overview &mdash; Latest Report (${last.report_date_as_yyyy_mm_dd.slice(0,10)})</h2>
+    <table class="cot-table overview">
+      <thead><tr><th>Category</th><th>Long</th><th>Short</th><th>Net (L-S)</th><th>Bias</th></tr></thead>
+      <tbody>${rows}${nrRow}${totalRow}</tbody>
+    </table>
+  </div>`;
+}
+
+// Retail sentiment for XAU/USD is kept in data/sentiment.json, which a scheduled
+// GitHub Actions workflow (.github/workflows/update-sentiment.yml) re-scrapes and
+// commits automatically (see scripts/fetch-sentiment.mjs). This DEFAULT is only
+// used if that file is ever missing or fails to load, so the card doesn't break.
+const SENTIMENT_DEFAULT = {
+  pair: "XAU/USD",
+  bias: "Bearish",
+  long: 66,
+  short: 34,
+  brokers: [
+    { name: "Oanda", long: 77, short: 23, bias: "Bearish" },
+    { name: "Dukas", long: 75, short: 25, bias: "Bearish" },
+    { name: "XMGroup", long: 71, short: 29, bias: "Bearish" },
+    { name: "Insta", long: 70, short: 30, bias: "Bearish" },
+    { name: "Amarkets", long: 62, short: 38, bias: "Bearish" },
+    { name: "MyFxBook", long: 59, short: 41, bias: "Neutral" },
+    { name: "FXBlue", long: 51, short: 49, bias: "Neutral" }
+  ],
+  scrapedAt: null
+};
+
+async function fetchSentimentData() {
+  try {
+    const res = await fetch("./sentiment.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn("Falling back to default sentiment snapshot:", err.message);
+    return SENTIMENT_DEFAULT;
+  }
+}
+
+function pillClass(bias) {
+  return bias === "Bearish" ? "pill-bear" : bias === "Bullish" ? "pill-bull" : "pill-neutral";
+}
+
+function sentimentCardHtml(data) {
+  const brokerRows = data.brokers.map(b => `
+    <tr>
+      <td>${b.name}</td>
+      <td class="num">${b.long}%</td>
+      <td class="num">${b.short}%</td>
+      <td><span class="pill ${pillClass(b.bias)}">${b.bias}</span></td>
+    </tr>`).join("");
+
+  const biasClass = data.bias === "Bearish" ? "badge-short" : data.bias === "Bullish" ? "badge-long" : "badge-flat";
+  const updatedLine = data.scrapedAt
+    ? `Auto-updated ${new Date(data.scrapedAt).toLocaleString()} (hourly via GitHub Actions)`
+    : `Default snapshot &mdash; waiting for first scheduled scrape to run`;
+
+  return `
+  <div class="sentiment-card">
+    <div class="cat-header">
+      <h2>${data.pair} Retail Sentiment</h2>
+      <div class="cat-summary"><span class="badge ${biasClass}">${data.bias.toUpperCase()}</span></div>
+    </div>
+    <p class="sentiment-source">Source: Trader Sentiments &middot; aggregate broker feeds &middot; ${updatedLine}</p>
+    <div class="sentiment-bar-labels">
+      <span class="pos">Long ${data.long}%</span>
+      <span class="neg">Short ${data.short}%</span>
+    </div>
+    <div class="sentiment-bar">
+      <div class="long-fill" style="width:${data.long}%;"></div>
+      <div class="short-fill" style="width:${data.short}%;"></div>
+    </div>
+    <table class="broker-table">
+      <thead><tr><th>Broker</th><th>Long</th><th>Short</th><th>Bias</th></tr></thead>
+      <tbody>${brokerRows}</tbody>
+    </table>
+  </div>`;
+}
+
+async function loadReport() {
+  const statusEl = document.getElementById("status");
+  const reportEl = document.getElementById("report");
+  const btn = document.getElementById("loadBtn");
+  const commodity = document.getElementById("commodity").value.trim();
+  const marketChoice = document.getElementById("market").value;
+  const weeks = parseInt(document.getElementById("weeks").value, 10) || 5;
+
+  btn.disabled = true;
+  statusEl.className = "";
+  statusEl.textContent = "Loading data from CFTC...";
+  reportEl.style.display = "none";
+
+  try {
+    let rows;
+    const sentimentPromise = fetchSentimentData();
+    if (marketChoice) {
+      const where = `upper(market_and_exchange_names) = upper('${marketChoice.replace(/'/g, "''")}')`;
+      rows = await socrataGet(where);
+    } else {
+      rows = await listMarkets(commodity);
+      if (rows.length === 0) throw new Error(`No data found for commodity "${commodity}"`);
+      const mainMarket = pickMainMarket(rows);
+      rows = rows.filter(r => r.market_and_exchange_names === mainMarket);
+    }
+    const sentimentData = await sentimentPromise;
+
+    if (!rows || rows.length === 0) throw new Error("No data returned for that market.");
+
+    rows.sort((a, b) => new Date(a.report_date_as_yyyy_mm_dd) - new Date(b.report_date_as_yyyy_mm_dd));
+    const sorted = rows.slice(-(weeks + 1));
+
+    const marketName = sorted[0].market_and_exchange_names;
+    const dateRange = `${sorted[0].report_date_as_yyyy_mm_dd.slice(0,10)} to ${sorted[sorted.length-1].report_date_as_yyyy_mm_dd.slice(0,10)}`;
+
+    const swapCat = CATEGORIES.find(c => c.name === "Swap Dealers");
+    const otherCats = CATEGORIES.filter(c => c.name !== "Swap Dealers");
+
+    let html = `<p class="subtitle" style="margin-bottom:20px;"><strong>${marketName}</strong> &middot; ${dateRange}</p>`;
+    html += overviewCard(sorted);
+    html += `<div class="side-by-side">`;
+    html += categoryCard(swapCat, sorted);
+    html += sentimentCardHtml(sentimentData);
+    html += `</div>`;
+    html += otherCats.map(cat => categoryCard(cat, sorted)).join("");
+    html += `<p class="footer-note">Swap Dealers are highlighted as the key group to watch &mdash; they often reflect
+      bullion-bank / OTC hedging flow rather than directional speculation, so shifts in their net position
+      can be a useful cross-check against Managed Money (speculative) positioning.</p>`;
+
+    reportEl.innerHTML = html;
+    reportEl.style.display = "block";
+    statusEl.textContent = "";
+  } catch (err) {
+    statusEl.className = "error";
+    statusEl.textContent = `Error: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("loadBtn").addEventListener("click", loadReport);
+document.getElementById("commodity").addEventListener("change", () => listMarkets(document.getElementById("commodity").value.trim()).catch(() => {}));
+
+// auto-load Gold on first visit
+window.addEventListener("DOMContentLoaded", () => {
+  listMarkets("GOLD").catch(() => {});
+  loadReport();
+});
+</script>
+</body>
+</html>
