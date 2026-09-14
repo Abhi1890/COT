@@ -1,0 +1,40 @@
+name: Update XAU/USD sentiment snapshot
+
+on:
+  schedule:
+    # Runs at the top of every hour. Adjust to taste (cron is UTC).
+    # Examples:
+    #   "*/30 * * * *"  -> every 30 minutes
+    #   "0 */4 * * *"   -> every 4 hours
+    - cron: "0 * * * *"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+permissions:
+  contents: write   # needed so the workflow can commit sentiment.json back
+
+jobs:
+  update-sentiment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run scraper
+        run: node fetch-sentiment.mjs
+
+      - name: Commit updated data if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- sentiment.json; then
+            git add sentiment.json
+            git commit -m "chore: update XAU/USD sentiment snapshot [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
