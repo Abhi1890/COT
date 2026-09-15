@@ -56,21 +56,26 @@ function extractOverview(text) {
   };
 }
 
+function toTitleCase(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+}
+
 function extractBrokers(text) {
   const sectionMatch = text.match(/Broker breakdown([\s\S]*?)(?:What is Retail Sentiment|$)/i);
   const section = sectionMatch ? sectionMatch[1] : text;
 
-  // Tolerant of: broker names with spaces/periods/ampersands, decimal percentages,
-  // and either "Long: 77%Short: 23%" (concatenated) or "Long: 77% Short: 23%" (spaced).
+  // Their broker rows are ALL CAPS ("BEARISH", "NEUTRAL") unlike the overview
+  // section which uses Title Case ("Bearish") - hence the /i flag here, with
+  // the captured bias normalized to Title Case for consistent display.
   const rowRegex =
-    /([A-Za-z0-9][A-Za-z0-9 .&'-]{0,40}?)\n(Bullish|Bearish|Neutral)\nLong:\s*(\d+(?:\.\d+)?)%\s*Short:\s*(\d+(?:\.\d+)?)%/g;
+    /([A-Za-z0-9][A-Za-z0-9 .&'-]{0,40}?)\n(BULLISH|BEARISH|NEUTRAL)\nLong:\s*(\d+(?:\.\d+)?)%\s*Short:\s*(\d+(?:\.\d+)?)%/gi;
 
   const brokers = [];
   let m;
   while ((m = rowRegex.exec(section)) !== null) {
     brokers.push({
       name: m[1].trim(),
-      bias: m[2],
+      bias: toTitleCase(m[2]),
       long: parseFloat(m[3]),
       short: parseFloat(m[4]),
     });
