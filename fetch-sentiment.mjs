@@ -121,7 +121,29 @@ async function main() {
     overview = extractOverview(text);
     brokers = extractBrokers(text);
   } catch (err) {
-    console.error("--- DEBUG: first 3000 chars of rendered page text ---");
+    console.error(`--- DEBUG: total extracted text length = ${text.length} chars ---`);
+
+    // Find every place the word "broker" appears (case-insensitive) and show
+    // a window of surrounding text, since that's the part we actually need
+    // to see to fix the regex - the first N characters alone often aren't enough.
+    const lower = text.toLowerCase();
+    let idx = 0;
+    let hits = 0;
+    while (hits < 5) {
+      const found = lower.indexOf("broker", idx);
+      if (found === -1) break;
+      const start = Math.max(0, found - 100);
+      const end = Math.min(text.length, found + 600);
+      console.error(`--- DEBUG: context around "broker" occurrence #${hits + 1} (chars ${start}-${end}) ---`);
+      console.error(text.slice(start, end));
+      idx = found + 6;
+      hits++;
+    }
+    if (hits === 0) {
+      console.error('--- DEBUG: the word "broker" does not appear anywhere in the extracted text at all ---');
+    }
+
+    console.error("--- DEBUG: first 3000 chars of full extracted text (for overall context) ---");
     console.error(text.slice(0, 3000));
     console.error("--- END DEBUG ---");
     throw err;
