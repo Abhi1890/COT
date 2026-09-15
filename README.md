@@ -60,6 +60,48 @@ approach instead:
 Happy to build that workflow file too if you'd like the scheduled version
 as a backup.
 
+## Economic Calendar tab (Yesterday / Today / Tomorrow)
+
+A second tab, next to "COT Report", shows important US economic events for
+Yesterday, Today, and Tomorrow (US Eastern time). Unlike the sentiment card,
+this uses **only official, no-signup-required sources** - no scraping, no
+API keys, no ToS ambiguity:
+
+- **BLS release schedule** (`fetch-economic-events.mjs` reads
+  `https://www.bls.gov/schedule/news_release/bls.ics`) - the BLS's own
+  official iCalendar feed, meant for subscribing in Google Calendar/Outlook.
+  Gives the exact date/time of every upcoming CPI, NFP (Employment
+  Situation), PPI, and other BLS release.
+- **BLS public data API** (no key needed for this volume of use) - once a
+  release's date has passed, this fetches the actual published value for
+  CPI, Core CPI, Unemployment Rate, Nonfarm Payrolls, and Average Hourly
+  Earnings, and attaches it to that event.
+- **Federal Reserve Monetary Policy RSS feed**
+  (`https://www.federalreserve.gov/feeds/press_monetary.xml`) - FOMC
+  statements, minutes, and related announcements.
+
+**Important limitation, by design:** none of these official sources publish
+a "forecast/consensus" figure - only private aggregators (Forex Factory,
+Trading Economics, etc.) do that, by polling economists. We intentionally
+did not build this against Forex Factory specifically, since their own
+community indicates they don't sanction automated/API-style access to their
+calendar. So this tab shows the real schedule and the real official actual
+value once released, but not a forecast column.
+
+**Files added for this feature:**
+- `fetch-economic-events.mjs` - the scraper (no Playwright needed here -
+  everything it reads is a clean ICS/RSS/JSON format, not rendered HTML)
+- `economic-events.json` - the data the site reads (auto-updated)
+- `.github/workflows/update-economic-events.yml` - runs the scraper every
+  6 hours (this data changes far less often than retail sentiment, so a
+  lighter schedule is enough)
+
+**Enabling it:** same as the sentiment workflow - once you've set
+"Read and write permissions" under Settings -> Actions -> General (if you
+haven't already for the sentiment workflow), this one just works the same
+way. Trigger it once manually from the Actions tab to populate
+`economic-events.json` immediately rather than waiting up to 6 hours.
+
 ## Auto-updating XAU/USD retail sentiment (GitHub Actions)
 
 The Swap Dealers table now sits side-by-side with an XAU/USD Retail Sentiment

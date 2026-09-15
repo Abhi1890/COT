@@ -1,0 +1,39 @@
+name: Update economic events
+
+on:
+  schedule:
+    # Every 6 hours. This data (BLS schedule, Fed announcements) changes
+    # far less often than retail sentiment, so a lighter cadence is fine -
+    # and no Playwright/browser install is needed here, so runs are quick.
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-economic-events:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run scraper
+        run: node fetch-economic-events.mjs
+
+      - name: Commit updated data if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- economic-events.json; then
+            git add economic-events.json
+            git commit -m "chore: update economic events [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi

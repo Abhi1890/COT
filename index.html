@@ -166,6 +166,44 @@ table.broker-table td.num { text-align: right; font-variant-numeric: tabular-num
 .pill-bear { background: var(--badge-short-bg); color: var(--badge-short-text); }
 .pill-bull { background: var(--badge-long-bg); color: var(--badge-long-text); }
 .pill-neutral { background: var(--badge-flat-bg); color: var(--badge-flat-text); }
+
+.main-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+.main-tab {
+  background: transparent; color: var(--text-muted); border: none; border-bottom: 3px solid transparent;
+  padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: -2px;
+}
+.main-tab.active { color: var(--text); border-bottom-color: var(--accent-amber); }
+.main-panel { display: none; }
+.main-panel.active { display: block; }
+
+.econ-day-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.econ-day-tab {
+  background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--border);
+  border-radius: 20px; padding: 7px 16px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.econ-day-tab.active { background: var(--accent-amber); color: #1e272e; border-color: var(--accent-amber); }
+.econ-status { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+
+.econ-card {
+  background: var(--card-bg); border-radius: 12px; padding: 16px 20px; margin-bottom: 14px;
+  box-shadow: var(--shadow); border-left: 5px solid var(--border);
+}
+.econ-card.bls { border-left-color: #4b7bec; }
+.econ-card.fed { border-left-color: #8854d0; }
+.econ-card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.econ-card-header h3 { margin: 0; font-size: 16px; }
+.econ-time { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+.econ-source-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 2px 8px; border-radius: 10px; margin-left: 8px; background: var(--table-head-bg); color: var(--text-muted);
+}
+.econ-actuals { margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; }
+.econ-actual-item { font-size: 13.5px; }
+.econ-actual-item .label { color: var(--text-muted); }
+.econ-actual-item .value { font-weight: 700; }
+.econ-empty { color: var(--text-faint); font-size: 14px; padding: 20px 0; text-align: center; }
+.econ-link { font-size: 13px; color: var(--accent-amber); text-decoration: none; }
+.econ-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -178,24 +216,41 @@ table.broker-table td.num { text-align: right; font-variant-numeric: tabular-num
     <button id="themeToggle" class="theme-toggle" type="button">&#9789; Dark mode</button>
   </div>
 
-  <div class="controls">
-    <div class="field">
-      <label for="commodity">Commodity</label>
-      <input id="commodity" type="text" value="GOLD" placeholder="e.g. GOLD, SILVER">
-    </div>
-    <div class="field grow">
-      <label for="market">Market (optional, exact match)</label>
-      <select id="market"><option value="">-- auto-pick main contract --</option></select>
-    </div>
-    <div class="field">
-      <label for="weeks">Weeks to show</label>
-      <input id="weeks" type="number" value="5" min="2" max="52">
-    </div>
-    <button id="loadBtn">Load Report</button>
+  <div class="main-tabs">
+    <button class="main-tab active" data-panel="cot-panel" type="button">COT Report</button>
+    <button class="main-tab" data-panel="econ-panel" type="button">Economic Calendar</button>
   </div>
 
-  <div id="status"></div>
-  <div id="report"></div>
+  <div id="cot-panel" class="main-panel active">
+    <div class="controls">
+      <div class="field">
+        <label for="commodity">Commodity</label>
+        <input id="commodity" type="text" value="GOLD" placeholder="e.g. GOLD, SILVER">
+      </div>
+      <div class="field grow">
+        <label for="market">Market (optional, exact match)</label>
+        <select id="market"><option value="">-- auto-pick main contract --</option></select>
+      </div>
+      <div class="field">
+        <label for="weeks">Weeks to show</label>
+        <input id="weeks" type="number" value="5" min="2" max="52">
+      </div>
+      <button id="loadBtn">Load Report</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="report"></div>
+  </div>
+
+  <div id="econ-panel" class="main-panel">
+    <div class="econ-day-tabs">
+      <button class="econ-day-tab" data-day="yesterday" type="button">Yesterday</button>
+      <button class="econ-day-tab active" data-day="today" type="button">Today</button>
+      <button class="econ-day-tab" data-day="tomorrow" type="button">Tomorrow</button>
+    </div>
+    <div id="econ-status" class="econ-status"></div>
+    <div id="econ-content"></div>
+  </div>
 </div>
 
 <script>
@@ -486,6 +541,91 @@ function initTheme() {
 document.getElementById("themeToggle").addEventListener("click", () => {
   const current = document.documentElement.getAttribute("data-theme");
   applyTheme(current === "dark" ? "light" : "dark");
+});
+
+// --- Main tab switching (COT Report / Economic Calendar) ---
+document.querySelectorAll(".main-tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".main-tab").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".main-panel").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.panel).classList.add("active");
+    if (btn.dataset.panel === "econ-panel" && !econLoaded) {
+      loadEconomicEvents();
+    }
+  });
+});
+
+// --- Economic Calendar ---
+let econLoaded = false;
+let econData = null;
+
+function econSourceBadgeClass(source) {
+  return source === "Federal Reserve" ? "fed" : "bls";
+}
+
+function econEventCardHtml(event) {
+  const actualsHtml = event.actual && event.actual.length
+    ? `<div class="econ-actuals">${event.actual.map(a =>
+        `<div class="econ-actual-item"><span class="label">${a.label}:</span> <span class="value">${a.value}${a.unit === '%' ? '%' : ''}</span> <span class="label">(${a.period})</span></div>`
+      ).join("")}</div>`
+    : "";
+  const linkHtml = event.link ? `<div style="margin-top:8px;"><a class="econ-link" href="${event.link}" target="_blank" rel="noopener">Read release &rarr;</a></div>` : "";
+
+  return `
+  <div class="econ-card ${econSourceBadgeClass(event.source)}">
+    <div class="econ-card-header">
+      <h3>${event.name}<span class="econ-source-tag">${event.source}</span></h3>
+      <span class="econ-time">${event.time}</span>
+    </div>
+    ${actualsHtml}
+    ${linkHtml}
+  </div>`;
+}
+
+function renderEconDay(day) {
+  const contentEl = document.getElementById("econ-content");
+  const statusEl = document.getElementById("econ-status");
+  if (!econData) return;
+
+  const targetDate = econData.dateRange[day];
+  if (!targetDate) {
+    contentEl.innerHTML = '<div class="econ-empty">No data yet - waiting for the first scheduled update.</div>';
+    return;
+  }
+
+  const dayEvents = econData.events.filter((e) => e.date === targetDate);
+  statusEl.textContent = `${targetDate} (US Eastern time)`;
+
+  if (dayEvents.length === 0) {
+    contentEl.innerHTML = '<div class="econ-empty">No major scheduled releases or Fed announcements for this day.</div>';
+    return;
+  }
+
+  contentEl.innerHTML = dayEvents.map(econEventCardHtml).join("");
+}
+
+async function loadEconomicEvents() {
+  const statusEl = document.getElementById("econ-status");
+  statusEl.textContent = "Loading economic events...";
+  try {
+    const res = await fetch("./economic-events.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    econData = await res.json();
+    econLoaded = true;
+    const activeDay = document.querySelector(".econ-day-tab.active")?.dataset.day || "today";
+    renderEconDay(activeDay);
+  } catch (err) {
+    statusEl.textContent = `Could not load economic events: ${err.message}`;
+  }
+}
+
+document.querySelectorAll(".econ-day-tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".econ-day-tab").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderEconDay(btn.dataset.day);
+  });
 });
 
 // auto-load Gold on first visit
