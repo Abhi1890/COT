@@ -123,7 +123,7 @@ async function fetchBlsActuals(seriesIds) {
   const year = new Date().getFullYear();
   const res = await fetch(BLS_API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...BROWSER_HEADERS },
     body: JSON.stringify({
       seriesid: seriesIds,
       startyear: String(year - 1),
@@ -147,13 +147,19 @@ async function fetchBlsActuals(seriesIds) {
   return bySeriesId;
 }
 
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  Accept: "text/calendar, application/xml, text/xml, */*",
+};
+
 async function main() {
   const [icsText, rssText] = await Promise.all([
-    fetch(BLS_ICS_URL).then((r) => {
+    fetch(BLS_ICS_URL, { headers: BROWSER_HEADERS }).then((r) => {
       if (!r.ok) throw new Error(`BLS ICS HTTP ${r.status}`);
       return r.text();
     }),
-    fetch(FED_RSS_URL).then((r) => {
+    fetch(FED_RSS_URL, { headers: BROWSER_HEADERS }).then((r) => {
       if (!r.ok) throw new Error(`Fed RSS HTTP ${r.status}`);
       return r.text();
     }),
