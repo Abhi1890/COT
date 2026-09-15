@@ -150,26 +150,40 @@ async function fetchBlsActuals(seriesIds) {
 const BROWSER_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-  Accept: "text/calendar, application/xml, text/xml, */*",
+  Accept: "text/calendar, application/xml, text/xml, text/html, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  Referer: "https://www.bls.gov/schedule/news_release/",
 };
 
 async function main() {
-  const [icsText, rssText] = await Promise.all([
-    fetch(BLS_ICS_URL, { headers: BROWSER_HEADERS }).then((r) => {
-      if (!r.ok) throw new Error(`BLS ICS HTTP ${r.status}`);
-      return r.text();
-    }),
-    fetch(FED_RSS_URL, { headers: BROWSER_HEADERS }).then((r) => {
-      if (!r.ok) throw new Error(`Fed RSS HTTP ${r.status}`);
-      return r.text();
-    }),
-  ]);
+  let icsText = null;
+  let rssText = null;
+
+  try {
+    const res = await fetch(BLS_ICS_URL, { headers: BROWSER_HEADERS });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    icsText = await res.text();
+  } catch (err) {
+    console.error("Warning: could not fetch BLS release schedule:", err.message);
+  }
+
+  try {
+    const res = await fetch(FED_RSS_URL, { headers: BROWSER_HEADERS });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    rssText = await res.text();
+  } catch (err) {
+    console.error("Warning: could not fetch Fed RSS feed:", err.message);
+  }
+
+  if (!icsText && !rssText) {
+    throw new Error("Both BLS and Fed sources failed - nothing to update.");
+  }
 
   const { yesterday, today, tomorrow } = getDateWindow();
   const windowDates = new Set([yesterday, today, tomorrow]);
 
-  const blsEvents = parseICS(icsText).filter((e) => windowDates.has(e.date));
-  const fedEvents = parseRSS(rssText).filter((e) => windowDates.has(e.date));
+  const blsEvents = icsText ? parseICS(icsText).filter((e) => windowDates.has(e.date)) : [];
+  const fedEvents = rssText ? parseRSS(rssText).filter((e) => windowDates.has(e.date)) : [];
 
   // Only fetch "actual" values for releases whose date is today or earlier
   // (a future release obviously has no actual value yet), and only for
