@@ -1,16 +1,25 @@
 // Scrapes the publicly visible XAU/USD sentiment numbers from tradersentiments.com
-// and writes them to data/sentiment.json. Designed to run on a schedule via
+// and writes them to sentiment.json. Designed to run on a schedule via
 // GitHub Actions (see .github/workflows/update-sentiment.yml).
 //
-// This is text-pattern based (not CSS-selector based) so it's more resilient to
-// markup/class-name changes on their end - it looks for the same visible labels
-// a human reading the page would see ("Average Long: 66%", "Crowd Bias: Bearish",
-// broker rows like "Oanda / Bearish / Long: 77% Short: 23%").
+// IMPORTANT: this uses a real headless browser (Playwright), not a plain fetch().
+// The broker-breakdown table on that page is loaded by client-side JavaScript
+// after the initial page load, so a plain HTTP fetch only ever sees the
+// server-rendered overview stats (Average Long/Short/Bias) and never the
+// per-broker rows. Rendering with a headless browser executes that JS first,
+// same as a normal visitor's browser would.
+//
+// Extraction is still text-pattern based (not CSS-selector based) so it's more
+// resilient to markup/class-name changes on their end - it looks for the same
+// visible labels a human reading the page would see ("Average Long: 66%",
+// "Crowd Bias: Bearish", broker rows like "Oanda / Bearish / Long: 77% Short: 23%").
 //
 // If the page structure changes enough that these patterns stop matching, the
-// script exits with an error and leaves the existing data/sentiment.json alone,
-// so the site keeps showing the last good snapshot instead of breaking.
+// script exits with an error, prints a debug snippet of what it actually saw,
+// and leaves the existing sentiment.json alone so the site keeps showing the
+// last good snapshot instead of breaking.
 
+import { chromium } from "playwright";
 import { writeFile, readFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,17 +30,8 @@ const OUTPUT_PATH = path.join(__dirname, "sentiment.json");
 const SOURCE_URL = "https://tradersentiments.com/sentiment/commodities/xau-usd";
 const PAIR = "XAU/USD";
 
-function htmlToText(html) {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, "\n")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&#39;|&rsquo;|&lsquo;/gi, "'")
-    .replace(/&quot;|&rdquo;|&ldquo;/gi, '"')
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n")
+function normalizeText(rawText) {
+  return rawText
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean)
@@ -39,8 +39,8 @@ function htmlToText(html) {
 }
 
 function extractOverview(text) {
-  const longMatch = text.match(/Average Long:\s*(\d+)%/i);
-  const shortMatch = text.match(/Average Short:\s*(\d+)%/i);
+  const longMatch = text.match(/Average Long:\s*(\d+(?:\.\d+)?)%/i);
+  const shortMatch = text.match(/Average Short:\s*(\d+(?:\.\d+)?)%/i);
   const biasMatch = text.match(/Crowd Bias:\s*(Bullish|Bearish|Neutral)/i);
 
   if (!longMatch || !shortMatch || !biasMatch) {
@@ -50,8 +50,8 @@ function extractOverview(text) {
   }
 
   return {
-    long: parseInt(longMatch[1], 10),
-    short: parseInt(shortMatch[1], 10),
+    long: parseFloat(longMatch[1]),
+    short: parseFloat(shortMatch[1]),
     bias: biasMatch[1],
   };
 }
@@ -60,16 +60,19 @@ function extractBrokers(text) {
   const sectionMatch = text.match(/Broker breakdown([\s\S]*?)(?:What is Retail Sentiment|$)/i);
   const section = sectionMatch ? sectionMatch[1] : text;
 
-  const rowRegex = /([A-Za-z][A-Za-z0-9]*)\n(Bullish|Bearish|Neutral)\nLong:\s*(\d+)%Short:\s*(\d+)%/g;
+  // Tolerant of: broker names with spaces/periods/ampersands, decimal percentages,
+  // and either "Long: 77%Short: 23%" (concatenated) or "Long: 77% Short: 23%" (spaced).
+  const rowRegex =
+    /([A-Za-z0-9][A-Za-z0-9 .&'-]{0,40}?)\n(Bullish|Bearish|Neutral)\nLong:\s*(\d+(?:\.\d+)?)%\s*Short:\s*(\d+(?:\.\d+)?)%/g;
 
   const brokers = [];
   let m;
   while ((m = rowRegex.exec(section)) !== null) {
     brokers.push({
-      name: m[1],
+      name: m[1].trim(),
       bias: m[2],
-      long: parseInt(m[3], 10),
-      short: parseInt(m[4], 10),
+      long: parseFloat(m[3]),
+      short: parseFloat(m[4]),
     });
   }
 
@@ -89,25 +92,40 @@ async function loadExisting() {
   }
 }
 
-async function main() {
-  console.log(`Fetching ${SOURCE_URL} ...`);
-  const res = await fetch(SOURCE_URL, {
-    headers: {
-      // A normal browser UA - some sites block obvious bot user-agents.
-      "User-Agent":
+async function scrapePage() {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({
+      userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    },
-  });
+    });
+    console.log(`Navigating to ${SOURCE_URL} ...`);
+    await page.goto(SOURCE_URL, { waitUntil: "networkidle", timeout: 45000 });
 
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching source page`);
+    // Give any client-side widgets a moment to finish fetching/rendering
+    // their own data after the initial network-idle point.
+    await page.waitForTimeout(2500);
+
+    const rawText = await page.evaluate(() => document.body.innerText);
+    return normalizeText(rawText);
+  } finally {
+    await browser.close();
   }
+}
 
-  const html = await res.text();
-  const text = htmlToText(html);
+async function main() {
+  const text = await scrapePage();
 
-  const overview = extractOverview(text);
-  const brokers = extractBrokers(text);
+  let overview, brokers;
+  try {
+    overview = extractOverview(text);
+    brokers = extractBrokers(text);
+  } catch (err) {
+    console.error("--- DEBUG: first 3000 chars of rendered page text ---");
+    console.error(text.slice(0, 3000));
+    console.error("--- END DEBUG ---");
+    throw err;
+  }
 
   const data = {
     pair: PAIR,
@@ -128,7 +146,7 @@ main().catch(async (err) => {
   console.error("Scrape failed:", err.message);
   const existing = await loadExisting();
   if (existing) {
-    console.error("Leaving existing data/sentiment.json untouched.");
+    console.error("Leaving existing sentiment.json untouched.");
   }
   process.exit(1);
 });

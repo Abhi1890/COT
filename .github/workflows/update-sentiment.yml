@@ -2,10 +2,7 @@ name: Update XAU/USD sentiment snapshot
 
 on:
   schedule:
-    # Runs at the top of every hour. Adjust to taste (cron is UTC).
-    # Examples:
-    #   "*/30 * * * *"  -> every 30 minutes
-    #   "0 */4 * * *"   -> every 4 hours
+    # Every 5 minutes (GitHub's practical minimum for scheduled workflows).
     - cron: "*/5 * * * *"
   workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
 
@@ -23,6 +20,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache Playwright browser binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Install Playwright's Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright's OS dependencies only (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Run scraper
         run: node fetch-sentiment.mjs

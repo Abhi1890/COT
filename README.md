@@ -13,7 +13,9 @@ auto-updates on a schedule.
 your-repo/
 ├── index.html               <- the site itself
 ├── sentiment.json            <- auto-updated data the site reads
-├── fetch-sentiment.mjs        <- scraper the workflow runs
+├── fetch-sentiment.mjs        <- scraper the workflow runs (Playwright-based)
+├── package.json               <- declares the Playwright dependency
+├── .gitignore
 ├── README.md
 └── .github/
     └── workflows/
@@ -64,15 +66,21 @@ The Swap Dealers table now sits side-by-side with an XAU/USD Retail Sentiment
 card. That card reads from `sentiment.json` (same folder as `index.html`),
 which a scheduled GitHub Actions workflow keeps fresh automatically:
 
-- `fetch-sentiment.mjs` fetches tradersentiments.com's XAU/USD page
-  server-side (no CORS issue there, since it's not a browser) and extracts the
-  Long/Short percentages, crowd bias, and per-broker breakdown using text
-  pattern matching (not brittle CSS selectors).
+- `fetch-sentiment.mjs` uses a **headless browser (Playwright)** to open
+  tradersentiments.com's XAU/USD page and extracts the Long/Short percentages,
+  crowd bias, and per-broker breakdown using text pattern matching (not
+  brittle CSS selectors). A headless browser is needed - a plain HTTP fetch
+  only sees the server-rendered overview stats; the per-broker breakdown
+  table is loaded by client-side JavaScript after the page loads, so it's
+  invisible to a plain fetch and only shows up once that JS actually runs.
+- `package.json` declares the `playwright` dependency; the workflow runs
+  `npm install` and caches the downloaded Chromium browser binary so most
+  runs don't have to re-download it.
 - `.github/workflows/update-sentiment.yml` runs that script on a schedule
-  (hourly by default) and commits the updated `sentiment.json` back to
-  the repo if anything changed. (This one file has to stay under
-  `.github/workflows/` - that path is required by GitHub Actions itself and
-  can't be flattened, unlike everything else in this repo.)
+  (every 5 minutes by default - GitHub's practical minimum) and commits the
+  updated `sentiment.json` back to the repo if anything changed. (This one
+  file has to stay under `.github/workflows/` - that path is required by
+  GitHub Actions itself and can't be flattened, unlike everything else here.)
 - `index.html` fetches `./sentiment.json` at page-load time and falls
   back to a built-in default snapshot if that file is ever missing.
 
@@ -82,24 +90,26 @@ which a scheduled GitHub Actions workflow keeps fresh automatically:
    the updated JSON back).
 2. Go to the **Actions** tab, find "Update XAU/USD sentiment snapshot", and
    click **Run workflow** once manually to test it immediately rather than
-   waiting for the next scheduled hour.
-3. Check the run logs - it prints the scraped values. If it succeeds, you'll
-   see a new commit updating `sentiment.json`.
+   waiting for the next scheduled run.
+3. Check the run logs - it prints the scraped values on success. If it
+   fails, the logs now also print a debug snippet of the actual rendered
+   page text, right above the error, which makes it much easier to spot
+   wording/structure changes on their end.
 4. Refresh your GitHub Pages site - the sentiment card will show
-   "Auto-updated <timestamp> (hourly via GitHub Actions)".
+   "Auto-updated <timestamp> (hourly via GitHub Actions)" (the label still
+   says "hourly" in the UI text even though the schedule is now 5 minutes -
+   cosmetic only, doesn't affect functionality).
 
-**Adjusting the schedule:** edit the `cron` line in the workflow file, e.g.
-`"*/30 * * * *"` for every 30 minutes. Cron times are in UTC. Very frequent
-schedules add unnecessary load on their server and your Actions minutes, so
-hourly or every few hours is a reasonable default for data that itself only
-moves gradually.
+**Adjusting the schedule:** edit the `cron` line in the workflow file. GitHub
+does not reliably run schedules more often than every 5 minutes, so
+`"*/5 * * * *"` is effectively the fastest this can go. Cron times are in
+UTC.
 
-**If the scrape ever starts failing:** the script exits with an error and
-leaves the existing `sentiment.json` untouched, so the site keeps
-showing the last good snapshot rather than breaking. Check the Actions run
-logs for the error - most likely cause would be tradersentiments.com changing
-their page wording, which would need a small regex tweak in
-`fetch-sentiment.mjs`.
+**If the scrape ever starts failing:** the script exits with an error,
+prints what it actually saw on the page (first 3000 characters) to the
+Action's log, and leaves the existing `sentiment.json` untouched - so the
+site keeps showing the last good snapshot rather than breaking. Paste that
+debug output if you need help adjusting the regex in `fetch-sentiment.mjs`.
 
 ## Using it
 
