@@ -1,5 +1,9 @@
 {
-  "generatedAt": null,
-  "dateRange": { "yesterday": null, "today": null, "tomorrow": null },
+  "generatedAt": "2026-09-15T12:12:53.700Z",
+  "dateRange": {
+    "yesterday": "2026-09-14",
+    "today": "2026-09-15",
+    "tomorrow": "2026-09-16"
+  },
   "events": []
 }
