@@ -7,8 +7,8 @@
     {
       "name": "Oanda",
       "bias": "Bearish",
-      "long": 78,
-      "short": 22
+      "long": 77,
+      "short": 23
     },
     {
       "name": "Dukas",
@@ -25,8 +25,8 @@
     {
       "name": "FXBlue",
       "bias": "Bearish",
-      "long": 66,
-      "short": 34
+      "long": 65,
+      "short": 35
     },
     {
       "name": "MyFxBook",
@@ -48,5 +48,5 @@
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-15T23:35:57.552Z"
+  "scrapedAt": "2026-09-15T23:41:04.239Z"
 }
