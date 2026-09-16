@@ -8,7 +8,7 @@
       "name": "Oanda",
       "bias": "Bearish",
       "long": 86,
-      "short": 15
+      "short": 14
     },
     {
       "name": "Insta",
@@ -43,10 +43,10 @@
     {
       "name": "FXBlue",
       "bias": "Neutral",
-      "long": 44,
-      "short": 56
+      "long": 45,
+      "short": 55
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-16T23:36:01.297Z"
+  "scrapedAt": "2026-09-16T23:41:03.548Z"
 }
