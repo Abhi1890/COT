@@ -31,8 +31,8 @@
     {
       "name": "Amarkets",
       "bias": "Bearish",
-      "long": 61,
-      "short": 39
+      "long": 62,
+      "short": 38
     },
     {
       "name": "MyFxBook",
@@ -48,5 +48,5 @@
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-16T22:06:00.743Z"
+  "scrapedAt": "2026-09-16T22:11:14.496Z"
 }
