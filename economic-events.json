@@ -1,9 +1,24 @@
 {
-  "generatedAt": "2026-09-16T16:05:54.850Z",
+  "generatedAt": "2026-09-16T20:51:18.192Z",
   "dateRange": {
     "yesterday": "2026-09-15",
     "today": "2026-09-16",
     "tomorrow": "2026-09-17"
   },
-  "events": []
+  "events": [
+    {
+      "name": "Federal Reserve issues FOMC statement",
+      "date": "2026-09-16",
+      "time": "02:00 PM ET",
+      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm",
+      "source": "Federal Reserve"
+    },
+    {
+      "name": "Federal Reserve Board and Federal Open Market Committee release economic projections from the September 15-16 FOMC meeting",
+      "date": "2026-09-16",
+      "time": "02:00 PM ET",
+      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916b.htm",
+      "source": "Federal Reserve"
+    }
+  ]
 }
