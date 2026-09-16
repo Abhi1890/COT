@@ -1,8 +1,8 @@
 {
   "pair": "XAU/USD",
   "bias": "Neutral",
-  "long": 57,
-  "short": 43,
+  "long": 58,
+  "short": 42,
   "brokers": [
     {
       "name": "Oanda",
@@ -19,20 +19,20 @@
     {
       "name": "Insta",
       "bias": "Bearish",
-      "long": 69,
-      "short": 31
+      "long": 67,
+      "short": 33
     },
     {
       "name": "MyFxBook",
       "bias": "Neutral",
-      "long": 53,
-      "short": 47
+      "long": 54,
+      "short": 46
     },
     {
       "name": "Amarkets",
       "bias": "Neutral",
-      "long": 50,
-      "short": 50
+      "long": 51,
+      "short": 49
     },
     {
       "name": "XMGroup",
@@ -43,10 +43,10 @@
     {
       "name": "FXBlue",
       "bias": "Neutral",
-      "long": 45,
-      "short": 55
+      "long": 46,
+      "short": 54
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-16T07:16:11.166Z"
+  "scrapedAt": "2026-09-16T07:21:08.091Z"
 }
