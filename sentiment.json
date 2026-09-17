@@ -5,16 +5,16 @@
   "short": 38,
   "brokers": [
     {
-      "name": "Oanda",
+      "name": "Dukas",
       "bias": "Bearish",
       "long": 75,
       "short": 25
     },
     {
-      "name": "Dukas",
+      "name": "Oanda",
       "bias": "Bearish",
-      "long": 75,
-      "short": 25
+      "long": 73,
+      "short": 27
     },
     {
       "name": "Insta",
@@ -48,5 +48,5 @@
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-17T23:35:59.490Z"
+  "scrapedAt": "2026-09-17T23:41:02.831Z"
 }
