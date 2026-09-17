@@ -23,12 +23,6 @@
       "short": 30
     },
     {
-      "name": "XMGroup",
-      "bias": "Neutral",
-      "long": 55,
-      "short": 45
-    },
-    {
       "name": "MyFxBook",
       "bias": "Neutral",
       "long": 53,
@@ -37,16 +31,22 @@
     {
       "name": "FXBlue",
       "bias": "Neutral",
-      "long": 46,
-      "short": 54
+      "long": 51,
+      "short": 49
     },
     {
       "name": "Amarkets",
       "bias": "Neutral",
-      "long": 45,
-      "short": 55
+      "long": 47,
+      "short": 53
+    },
+    {
+      "name": "XMGroup",
+      "bias": "Neutral",
+      "long": 46,
+      "short": 54
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-17T11:25:57.546Z"
+  "scrapedAt": "2026-09-17T11:31:23.919Z"
 }
