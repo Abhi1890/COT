@@ -43,10 +43,10 @@
     {
       "name": "FXBlue",
       "bias": "Bearish",
-      "long": 62,
-      "short": 38
+      "long": 64,
+      "short": 36
     }
   ],
   "source": "https://tradersentiments.com/sentiment/commodities/xau-usd",
-  "scrapedAt": "2026-09-24T05:56:04.823Z"
+  "scrapedAt": "2026-09-24T06:01:41.397Z"
 }
