@@ -1,9 +1,17 @@
 {
-  "generatedAt": "2026-10-07T12:37:20.087Z",
+  "generatedAt": "2026-10-07T22:40:11.306Z",
   "dateRange": {
     "yesterday": "2026-10-06",
     "today": "2026-10-07",
     "tomorrow": "2026-10-08"
   },
-  "events": []
+  "events": [
+    {
+      "name": "Minutes of the Federal Open Market Committee, September 15-16, 2026",
+      "date": "2026-10-07",
+      "time": "02:00 PM ET",
+      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261007a.htm",
+      "source": "Federal Reserve"
+    }
+  ]
 }
