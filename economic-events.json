@@ -1,17 +1,9 @@
 {
-  "generatedAt": "2026-10-29T22:25:01.948Z",
+  "generatedAt": "2026-10-30T04:18:28.302Z",
   "dateRange": {
-    "yesterday": "2026-10-28",
-    "today": "2026-10-29",
-    "tomorrow": "2026-10-30"
+    "yesterday": "2026-10-29",
+    "today": "2026-10-30",
+    "tomorrow": "2026-10-31"
   },
-  "events": [
-    {
-      "name": "Federal Reserve issues FOMC statement",
-      "date": "2026-10-28",
-      "time": "02:00 PM ET",
-      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm",
-      "source": "Federal Reserve"
-    }
-  ]
+  "events": []
 }
