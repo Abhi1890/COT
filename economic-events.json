@@ -1,17 +1,9 @@
 {
-  "generatedAt": "2026-11-14T04:52:13.627Z",
+  "generatedAt": "2026-11-14T12:56:37.048Z",
   "dateRange": {
-    "yesterday": "2026-11-12",
-    "today": "2026-11-13",
-    "tomorrow": "2026-11-14"
+    "yesterday": "2026-11-13",
+    "today": "2026-11-14",
+    "tomorrow": "2026-11-15"
   },
-  "events": [
-    {
-      "name": "Federal Reserve announces revised tentative schedule of Federal Open Market Committee meetings in 2027",
-      "date": "2026-11-12",
-      "time": "12:45 PM ET",
-      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261112a.htm",
-      "source": "Federal Reserve"
-    }
-  ]
+  "events": []
 }
