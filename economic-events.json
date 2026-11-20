@@ -1,17 +1,9 @@
 {
-  "generatedAt": "2026-11-20T00:17:05.723Z",
+  "generatedAt": "2026-11-20T14:51:56.629Z",
   "dateRange": {
-    "yesterday": "2026-11-18",
-    "today": "2026-11-19",
-    "tomorrow": "2026-11-20"
+    "yesterday": "2026-11-19",
+    "today": "2026-11-20",
+    "tomorrow": "2026-11-21"
   },
-  "events": [
-    {
-      "name": "Minutes of the Federal Open Market Committee, October 27-28, 2026",
-      "date": "2026-11-18",
-      "time": "02:00 PM ET",
-      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261118a.htm",
-      "source": "Federal Reserve"
-    }
-  ]
+  "events": []
 }
