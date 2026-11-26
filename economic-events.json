@@ -1,17 +1,9 @@
 {
-  "generatedAt": "2026-11-26T01:31:47.587Z",
+  "generatedAt": "2026-11-26T16:21:36.469Z",
   "dateRange": {
-    "yesterday": "2026-11-24",
-    "today": "2026-11-25",
-    "tomorrow": "2026-11-26"
+    "yesterday": "2026-11-25",
+    "today": "2026-11-26",
+    "tomorrow": "2026-11-27"
   },
-  "events": [
-    {
-      "name": "Minutes of the Board&#39;s discount rate meetings on October 19 and October 28, 2026",
-      "date": "2026-11-24",
-      "time": "02:00 PM ET",
-      "link": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261124a.htm",
-      "source": "Federal Reserve"
-    }
-  ]
+  "events": []
 }
